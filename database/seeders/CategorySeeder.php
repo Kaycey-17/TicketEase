@@ -63,7 +63,11 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $categoryData) {
-            Category::create($categoryData);
+
+            Category::firstOrCreate(
+                ['name' => $categoryData['name']],
+                $categoryData
+            );
         }
 
         $this->command->info('Categories seeded successfully!');

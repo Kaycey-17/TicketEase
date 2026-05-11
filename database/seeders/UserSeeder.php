@@ -11,7 +11,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Staff users — no requester profile needed
+        // Staff users
         $staffUsers = [
             [
                 'name'     => 'Admin User',
@@ -46,10 +46,13 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($staffUsers as $userData) {
-            User::create($userData);
+            User::firstOrCreate(
+                ['email' => $userData['email']],
+                $userData
+            );
         }
 
-        // Requester users — auto-create requester profile
+        // Requester users
         $requesterUsers = [
             [
                 'name'       => 'Bob Requester',
@@ -104,23 +107,26 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($requesterUsers as $userData) {
-            // Create user account
-            $user = User::create([
-                'name'     => $userData['name'],
-                'email'    => $userData['email'],
-                'password' => $userData['password'],
-                'role'     => 'requester',
-            ]);
 
-            // Auto-create linked requester profile
-            Requester::create([
-                'user_id'    => $user->id,
-                'first_name' => $userData['first_name'],
-                'last_name'  => $userData['last_name'],
-                'email'      => $userData['email'],
-                'phone'      => $userData['phone'],
-                'company'    => $userData['company'],
-            ]);
+            $user = User::firstOrCreate(
+                ['email' => $userData['email']],
+                [
+                    'name'     => $userData['name'],
+                    'password' => $userData['password'],
+                    'role'     => 'requester',
+                ]
+            );
+
+            Requester::firstOrCreate(
+                ['email' => $userData['email']],
+                [
+                    'user_id'    => $user->id,
+                    'first_name' => $userData['first_name'],
+                    'last_name'  => $userData['last_name'],
+                    'phone'      => $userData['phone'],
+                    'company'    => $userData['company'],
+                ]
+            );
         }
 
         $this->command->info('Users seeded successfully!');
