@@ -14,31 +14,31 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        // Get filter parameters
+
         $startDate = $request->input('start_date', now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $categoryId = $request->input('category_id');
 
-        // Build base query
+
         $query = Ticket::whereBetween('tickets.created_at', [$startDate, $endDate]);
         
         if ($categoryId) {
             $query->where('category_id', $categoryId);
         }
 
-        // Get all categories for filter dropdown
+
         $categories = Category::orderBy('name')->get();
 
-        // Calculate report data
+
         $reportData = $this->calculateReportData($query, $startDate, $endDate);
 
-        // Get agent performance
+
         $agentPerformance = $this->getAgentPerformance($startDate, $endDate, $categoryId);
 
-        // Get top requesters
+
         $topRequesters = $this->getTopRequesters($startDate, $endDate, $categoryId);
 
-        // Get detailed tickets list
+
         $tickets = (clone $query)
             ->with(['requester', 'category', 'assignedUser'])
             ->orderBy('tickets.created_at', 'desc')
@@ -61,8 +61,7 @@ class ReportController extends Controller
         
         $resolutionRate = $totalTickets > 0 ? round(($resolvedTickets / $totalTickets) * 100, 1) : 0;
 
-        // Calculate average response time (time to first reply)
-        // Using subquery to avoid ambiguity
+
         $avgResponseTime = DB::table('tickets')
             ->join('ticket_replies', 'tickets.id', '=', 'ticket_replies.ticket_id')
             ->whereBetween('tickets.created_at', [$startDate, $endDate])
@@ -70,7 +69,7 @@ class ReportController extends Controller
             ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, tickets.created_at, ticket_replies.created_at)) as avg_time')
             ->value('avg_time');
 
-        // Calculate average resolution time
+
         $avgResolutionTime = DB::table('tickets')
             ->whereBetween('tickets.created_at', [$startDate, $endDate])
             ->whereNotNull('resolved_at')
@@ -102,7 +101,7 @@ class ReportController extends Controller
             $resolvedCount = (clone $assignedQuery)->whereIn('status', ['resolved', 'closed'])->count();
             $resolutionRate = $assignedCount > 0 ? round(($resolvedCount / $assignedCount) * 100, 1) : 0;
 
-            // Calculate average response time for this agent
+
             $avgResponseTime = DB::table('tickets')
                 ->join('ticket_replies', 'tickets.id', '=', 'ticket_replies.ticket_id')
                 ->where('tickets.assigned_user_id', $user->id)
@@ -112,7 +111,7 @@ class ReportController extends Controller
                 ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, tickets.created_at, ticket_replies.created_at)) as avg_time')
                 ->value('avg_time');
 
-            // Calculate average resolution time for this agent
+
             $avgResolutionTime = DB::table('tickets')
                 ->where('assigned_user_id', $user->id)
                 ->whereBetween('tickets.created_at', [$startDate, $endDate])
@@ -135,7 +134,7 @@ class ReportController extends Controller
 
     private function getTopRequesters($startDate, $endDate, $categoryId)
     {
-        // ✅ Use withCount instead of JOIN + GROUP BY to avoid MySQL strict mode issues
+
         $query = Requester::withCount([
             'tickets as total_tickets' => function ($q) use ($startDate, $endDate, $categoryId) {
                 $q->whereBetween('tickets.created_at', [
@@ -183,12 +182,12 @@ class ReportController extends Controller
     
     public function export(Request $request)
     {
-        // Get filter parameters
+
         $startDate = $request->input('start_date', now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $categoryId = $request->input('category_id');
 
-        // Build query
+
         $query = Ticket::with(['requester', 'category', 'assignedUser'])
             ->whereBetween('tickets.created_at', [$startDate, $endDate]);
         
@@ -198,7 +197,7 @@ class ReportController extends Controller
 
         $tickets = $query->get();
 
-        // Generate CSV
+
         $filename = 'tickets_report_' . now()->format('Y-m-d_His') . '.csv';
         
         $headers = [
@@ -209,7 +208,7 @@ class ReportController extends Controller
         $callback = function() use ($tickets) {
             $file = fopen('php://output', 'w');
             
-            // Add CSV headers
+
             fputcsv($file, [
                 'Ticket ID',
                 'Subject',
@@ -224,7 +223,7 @@ class ReportController extends Controller
                 'Resolution Time (hours)'
             ]);
 
-            // Add data rows
+
             foreach ($tickets as $ticket) {
                 $responseTime = $ticket->replies->first() 
                     ? round($ticket->created_at->diffInHours($ticket->replies->first()->created_at), 1)
@@ -262,7 +261,7 @@ class ReportController extends Controller
         $endDate    = $request->get('end_date', now()->format('Y-m-d'));
         $categoryId = $request->get('category_id');
 
-        // Tickets
+
         $query = Ticket::with(['requester', 'category', 'assignedUser'])
             ->whereBetween('created_at', [
                 $startDate . ' 00:00:00',
@@ -275,7 +274,7 @@ class ReportController extends Controller
 
         $tickets = $query->orderBy('created_at', 'desc')->get();
 
-        // Summary stats
+
         $totalTickets    = $tickets->count();
         $resolvedTickets = $tickets->whereIn('status', ['resolved', 'closed'])->count();
         $openTickets     = $tickets->where('status', 'open')->count();
@@ -285,7 +284,7 @@ class ReportController extends Controller
             ? round(($resolvedTickets / $totalTickets) * 100, 1)
             : 0;
 
-        // Agent performance
+
         $agentPerformance = User::whereIn('role', ['admin', 'supervisor', 'support_agent'])
             ->withCount([
                 'assignedTickets as assigned_count' => function ($q) use ($startDate, $endDate, $categoryId) {
@@ -313,10 +312,10 @@ class ReportController extends Controller
                 return $agent;
             });
 
-        // Top requesters
+
         $topRequesters = $this->getTopRequesters($startDate, $endDate, $categoryId);
 
-        // Category label
+
         $categoryName = $categoryId
             ? Category::find($categoryId)?->name ?? 'All Categories'
             : 'All Categories';
