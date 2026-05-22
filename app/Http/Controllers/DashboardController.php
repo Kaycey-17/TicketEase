@@ -74,7 +74,7 @@ class DashboardController extends Controller
                 ->get();
         }
 
-        // ✅ Recent activity — admin and supervisor only
+        
         $recentActivity = collect();
         if ($user->isAdmin() || $user->isSupervisor()) {
             $recentActivity = ActivityLog::with('user')
