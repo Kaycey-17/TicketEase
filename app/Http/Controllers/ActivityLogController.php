@@ -12,17 +12,17 @@ class ActivityLogController extends Controller
         $query = ActivityLog::with('user')
             ->orderBy('created_at', 'desc');
 
-        // Filter by action type
+        
         if ($request->filled('action')) {
             $query->where('action', 'like', "%{$request->action}%");
         }
 
-        // Filter by user
+        
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
 
-        // Filter by date
+        
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -39,7 +39,7 @@ class ActivityLogController extends Controller
 
     public function clear()
     {
-        // Only admin can clear logs
+        
         if (!auth()->user()->isAdmin()) {
             abort(403);
         }
