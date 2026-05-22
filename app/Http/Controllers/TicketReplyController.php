@@ -13,7 +13,7 @@ class TicketReplyController extends Controller
     {
         $user = auth()->user();
 
-        // Prevent requesters from replying to other people's tickets
+
         if ($user->isRequester()) {
             $requester = $user->requester;
             if (!$requester || $ticket->requester_id !== $requester->id) {
@@ -21,7 +21,7 @@ class TicketReplyController extends Controller
             }
         }
 
-        // ✅ Block agents from replying to tickets not assigned to them
+
         if ($user->isAgent() && $ticket->assigned_user_id !== $user->id) {
             abort(403, 'You are not authorized to reply to this ticket.');
         }
@@ -38,7 +38,7 @@ class TicketReplyController extends Controller
 
         $ticket->touch();
 
-        // ✅ Log reply
+
         ActivityLog::log(
             'reply_added',
             "Added a reply to ticket #{$ticket->id}: \"{$ticket->subject}\"",
@@ -62,7 +62,7 @@ class TicketReplyController extends Controller
             abort(404);
         }
 
-        // ✅ Log before delete
+
         ActivityLog::log(
             'reply_deleted',
             "Deleted a reply from ticket #{$ticket->id}: \"{$ticket->subject}\"",
