@@ -84,7 +84,7 @@ class RequesterController extends Controller
     {
         $user = auth()->user();
 
-        // ── Agent: can only update phone and company ──────────────────
+
         if ($user->isAgent()) {
             $validated = $request->validate([
                 'phone'   => 'nullable|string|max:255',
@@ -104,7 +104,6 @@ class RequesterController extends Controller
                 ->with('success', 'Requester contact info updated successfully.');
         }
 
-        // ── Admin / Supervisor: full update ───────────────────────────
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
@@ -128,7 +127,7 @@ class RequesterController extends Controller
 
     public function destroy(Requester $requester)
     {
-        // Agents cannot delete requesters
+
         if (!auth()->user()->isAdmin() && !auth()->user()->isSupervisor()) {
             abort(403, 'You are not authorized to delete requesters.');
         }
