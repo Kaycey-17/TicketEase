@@ -58,7 +58,7 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
-        // ✅ Only admins and supervisors can delete — agents cannot
+        
         if (!auth()->user()->isAdmin() && !auth()->user()->isSupervisor()) {
             abort(403, 'You are not authorized to delete categories.');
         }
