@@ -73,7 +73,6 @@ class UserController extends Controller
             ]);
         }
 
-        // ✅ Log user creation
         ActivityLog::log(
             'user_created',
             "Created new user \"{$user->name}\" with role \"{$user->role}\"",
@@ -121,7 +120,6 @@ class UserController extends Controller
 
         $user->save();
 
-        // ✅ Log user update
         ActivityLog::log(
             'user_updated',
             "Updated user \"{$user->name}\"",
@@ -147,7 +145,6 @@ class UserController extends Controller
                 ->with('error', "Cannot delete user. They have {$assignedTicketsCount} assigned ticket(s).");
         }
 
-        // ✅ Log before delete
         ActivityLog::log(
             'user_deleted',
             "Deleted user \"{$user->name}\" with role \"{$user->role}\"",
