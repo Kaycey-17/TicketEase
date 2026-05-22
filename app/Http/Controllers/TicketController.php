@@ -86,7 +86,6 @@ class TicketController extends Controller
 
         $ticket = Ticket::create($validated);
 
-        // ✅ Record initial status history when ticket is created
         TicketStatusHistory::create([
             'ticket_id'   => $ticket->id,
             'changed_by'  => $user->id,
@@ -113,7 +112,6 @@ class TicketController extends Controller
             abort(403, 'You are not authorized to view this ticket.');
         }
 
-        // ✅ Load status histories alongside other relationships
         $ticket->load([
             'requester',
             'category',
@@ -165,7 +163,6 @@ class TicketController extends Controller
     {
         $user = auth()->user();
 
-        // ── Requester: subject + description only ─────────────────────
         if ($user->isRequester()) {
             $requester = $user->requester;
             if (!$requester || $ticket->requester_id !== $requester->id) {
@@ -183,7 +180,7 @@ class TicketController extends Controller
                 ->with('success', 'Ticket updated successfully.');
         }
 
-        // ── Agent: status + assigned_user_id only ─────────────────────
+
         if ($user->isAgent()) {
             if ($ticket->assigned_user_id !== $user->id) {
                 abort(403, 'You are not authorized to update this ticket.');
@@ -212,12 +209,10 @@ class TicketController extends Controller
                 }
             }
 
-            // ✅ Capture old status before update
             $oldStatus = $ticket->status;
 
             $ticket->update($validated);
 
-            // ✅ Record status history if status changed
             if ($oldStatus !== $validated['status']) {
                 TicketStatusHistory::create([
                     'ticket_id'   => $ticket->id,
@@ -239,7 +234,6 @@ class TicketController extends Controller
                 ->with('success', 'Ticket updated successfully.');
         }
 
-        // ── Admin / Supervisor: full edit ─────────────────────────────
         if ($ticket->status === 'closed') {
             return redirect()->route('tickets.show', $ticket)
                 ->with('error', 'This ticket is closed and cannot be updated.');
@@ -268,12 +262,11 @@ class TicketController extends Controller
             }
         }
 
-        // ✅ Capture old status before update
         $oldStatus = $ticket->status;
 
         $ticket->update($validated);
 
-        // ✅ Record status history if status changed
+
         if ($oldStatus !== $validated['status']) {
             TicketStatusHistory::create([
                 'ticket_id'   => $ticket->id,
